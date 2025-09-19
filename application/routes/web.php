@@ -3,5 +3,9 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Welcome to Parental Control API',
+        'version' => '1.0.0'
+    ]);
 });
