@@ -1,32 +1,31 @@
 <?php
-
+// app/Models/Notification.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class NotificationMirror extends Model
+class Notification extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
-        'child_user_id',
-        'app_package',
+        'device_id',
+        'app_name',
         'title',
         'content',
-        'priority',
-        'category',
         'timestamp',
-        'is_read',
     ];
 
     protected $casts = [
         'timestamp' => 'datetime',
-        'is_read' => 'boolean',
     ];
 
-    public function child()
+    public function device(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'child_user_id');
+        return $this->belongsTo(Device::class, 'device_id');
     }
 }

@@ -1,12 +1,14 @@
 <?php
-// app/Models/Location.php
+
+
+// app/Models/Screenshot.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Location extends Model
+class Screenshot extends Model
 {
     use HasFactory;
 
@@ -14,14 +16,11 @@ class Location extends Model
 
     protected $fillable = [
         'device_id',
-        'latitude',
-        'longitude',
+        'file_url',
         'timestamp',
     ];
 
     protected $casts = [
-        'latitude' => 'decimal:8',
-        'longitude' => 'decimal:8',
         'timestamp' => 'datetime',
     ];
 

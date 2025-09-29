@@ -3,105 +3,66 @@
 // app/Services/GeofenceService.php
 namespace App\Services;
 
-use App\Models\Geofence;
 use App\Models\Alert;
-use App\Models\FamilyMember;
+use App\Models\Device;
+use App\Models\Geofence;
+use App\Models\Location;
 
 class GeofenceService
 {
-    public function checkViolations($childId, $latitude, $longitude)
+    public function checkViolations(Device $device, Location $location)
     {
-        $childMember = FamilyMember::where('user_id', $childId)->first();
-        if (!$childMember) return;
-
-        $geofences = Geofence::where('family_id', $childMember->family_id)
+        // Get all active geofences for this device's parent
+        $geofences = Geofence::where('parent_id', $device->parent_id)
             ->where('is_active', true)
             ->get();
 
         foreach ($geofences as $geofence) {
-            $distance = $this->calculateDistance(
-                $latitude,
-                $longitude,
-                $geofence->center_latitude,
-                $geofence->center_longitude
+            $isInside = $geofence->isWithinRadius(
+                $location->latitude,
+                $location->longitude
             );
 
-            $this->processGeofenceViolation($childId, $geofence, $distance);
-        }
-    }
-
-    private function processGeofenceViolation($childId, $geofence, $distance)
-    {
-        $isInside = $distance <= $geofence->radius;
-        $violationType = null;
-        $priority = 'medium';
-
-        if ($geofence->type === 'safe' && !$isInside) {
-            $violationType = 'left_safe_zone';
-            $priority = 'high';
-        } elseif ($geofence->type === 'danger' && $isInside) {
-            $violationType = 'entered_danger_zone';
-            $priority = 'critical';
-        }
-
-        if ($violationType) {
-            // Check if we already alerted for this geofence recently (prevent spam)
-            $recentAlert = Alert::where('child_user_id', $childId)
-                ->where('type', 'geofence')
-                ->where('data->geofence_id', $geofence->id)
-                ->where('triggered_at', '>=', now()->subMinutes(30))
+            // Check if device just left the geofence
+            $previousLocation = Location::where('device_id', $device->id)
+                ->where('id', '<', $location->id)
+                ->orderBy('timestamp', 'desc')
                 ->first();
 
-            if (!$recentAlert) {
-                Alert::create([
-                    'child_user_id' => $childId,
-                    'type' => 'geofence',
-                    'priority' => $priority,
-                    'title' => $this->getGeofenceAlertTitle($violationType),
-                    'message' => $this->getGeofenceAlertMessage($violationType, $geofence->name),
-                    'data' => [
-                        'geofence_id' => $geofence->id,
-                        'geofence_name' => $geofence->name,
-                        'geofence_type' => $geofence->type,
-                        'distance' => $distance,
-                        'violation_type' => $violationType
-                    ],
-                    'triggered_at' => now()
-                ]);
+            if ($previousLocation) {
+                $wasInside = $geofence->isWithinRadius(
+                    $previousLocation->latitude,
+                    $previousLocation->longitude
+                );
+
+                // Trigger alert if status changed
+                if ($wasInside && !$isInside) {
+                    $this->createAlert($device, $geofence, 'left');
+                } elseif (!$wasInside && $isInside) {
+                    $this->createAlert($device, $geofence, 'entered');
+                }
             }
         }
     }
 
-    private function getGeofenceAlertTitle($violationType)
+    private function createAlert(Device $device, Geofence $geofence, string $action)
     {
-        return match ($violationType) {
-            'left_safe_zone' => 'Left Safe Zone',
-            'entered_danger_zone' => 'Entered Danger Zone',
-            default => 'Geofence Alert'
-        };
-    }
+        $message = sprintf(
+            '%s %s zona aman "%s"',
+            $device->device_name,
+            $action === 'left' ? 'keluar dari' : 'memasuki',
+            $geofence->name
+        );
 
-    private function getGeofenceAlertMessage($violationType, $geofenceName)
-    {
-        return match ($violationType) {
-            'left_safe_zone' => "Child has left the safe zone: {$geofenceName}",
-            'entered_danger_zone' => "Child has entered the danger zone: {$geofenceName}",
-            default => "Geofence violation at: {$geofenceName}"
-        };
-    }
+        Alert::create([
+            'parent_id' => $device->parent_id,
+            'device_id' => $device->id,
+            'type' => 'geofence_violation',
+            'message' => $message,
+            'is_read' => false,
+        ]);
 
-    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
-    {
-        $earthRadius = 6371000; // meters
-        $latDelta = deg2rad($lat2 - $lat1);
-        $lonDelta = deg2rad($lon2 - $lon1);
-
-        $a = sin($latDelta / 2) * sin($latDelta / 2) +
-            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($lonDelta / 2) * sin($lonDelta / 2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return $earthRadius * $c;
+        // Here you can add push notification logic
+        // $this->sendPushNotification($device->parent, $message);
     }
 }
