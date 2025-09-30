@@ -12,13 +12,13 @@ class ParentSeeder extends Seeder
         ParentModel::create([
             'email' => 'parent1@example.com',
             'password' => Hash::make('password123'),
-            'family_code' => 'ABC12345',
+            'family_code' => 'ABC123',
         ]);
 
         ParentModel::create([
             'email' => 'parent2@example.com',
             'password' => Hash::make('password123'),
-            'family_code' => 'XYZ67890',
+            'family_code' => 'XYZ678',
         ]);
     }
 }

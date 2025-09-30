@@ -22,9 +22,8 @@ class AuthController extends Controller
         $parent = ParentModel::create([
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'family_code' => strtoupper(Str::random(8)),
+            'family_code' => strtoupper(Str::random(6)), // Ubah dari 8 ke 6
         ]);
-
 
         $token = $parent->createToken('auth_token')->plainTextToken;
 
