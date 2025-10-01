@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\GeofenceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ScreenshotController;
-// use App\Http\Controllers\Api\AlertController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,8 +21,12 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 });
 
-// Device pairing (no auth required for child device)
-Route::post('devices/pair', [DeviceController::class, 'pair']);
+// Device pairing & verification (no auth required for child device)
+Route::prefix('devices')->group(function () {
+    Route::post('pair', [DeviceController::class, 'pair']);
+    Route::post('verify', [DeviceController::class, 'verify']); // BARU
+    Route::post('unpair', [DeviceController::class, 'unpair']); // BARU
+});
 
 // Device routes (for child device to send data)
 Route::prefix('device')->group(function () {
@@ -35,7 +38,7 @@ Route::prefix('device')->group(function () {
 
 // Protected routes (for parent dashboard)
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // Auth
     Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
@@ -71,13 +74,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('{deviceId}', [ScreenshotController::class, 'index']);
         Route::delete('{id}', [ScreenshotController::class, 'destroy']);
     });
-
-    // // Alerts
-    // Route::prefix('alerts')->group(function () {
-    //     Route::get('/', [AlertController::class, 'index']);
-    //     Route::get('unread-count', [AlertController::class, 'unreadCount']);
-    //     Route::put('{id}/read', [AlertController::class, 'markAsRead']);
-    //     Route::put('mark-all-read', [AlertController::class, 'markAllAsRead']);
-    //     Route::delete('{id}', [AlertController::class, 'destroy']);
-    // });
 });
