@@ -25,7 +25,7 @@ class ScreenshotController extends Controller
         $url = Storage::url($path);
 
         $screenshot = Screenshot::create([
-            'device_id' => $device->id,
+            'device_id' => $device->device_id,
             'file_url' => $url,
             'timestamp' => now(),
         ]);

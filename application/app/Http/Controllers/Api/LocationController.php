@@ -28,7 +28,7 @@ class LocationController extends Controller
         $device = Device::where('device_id', $request->device_id)->firstOrFail();
 
         $location = Location::create([
-            'device_id' => $device->id,
+            'device_id' => $device->device_id,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'timestamp' => now(),
