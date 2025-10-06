@@ -13,11 +13,19 @@ return new class extends Migration
     {
         Schema::create('screenshots', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('device_id')->constrained('devices')->onDelete('cascade');
+            // PENTING: device_id adalah STRING (Android ID), bukan foreign key
+            $table->string('device_id')->index();
             $table->string('file_url', 500);
             $table->timestamp('timestamp')->useCurrent();
             
+            // Index untuk query cepat
             $table->index(['device_id', 'timestamp'], 'idx_device_time');
+            
+            // Foreign key constraint (optional)
+            $table->foreign('device_id')
+                  ->references('device_id')
+                  ->on('devices')
+                  ->onDelete('cascade');
         });
     }
 

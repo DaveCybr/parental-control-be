@@ -12,14 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('devices', function (Blueprint $table) {
-            $table->id();
+            $table->id(); // Auto-increment ID
             $table->foreignId('parent_id')->constrained('parents')->onDelete('cascade');
-            $table->string('device_id')->unique();
+            $table->string('device_id')->unique(); // Android ID (string)
             $table->string('device_name');
             $table->enum('device_type', ['android', 'ios']);
             $table->boolean('is_online')->default(false);
             $table->timestamp('last_seen')->useCurrent();
             $table->timestamp('created_at')->useCurrent();
+            
+            // Index untuk performa
+            $table->index('device_id');
+            $table->index('parent_id');
         });
     }
 

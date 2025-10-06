@@ -13,13 +13,23 @@ return new class extends Migration
     {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('device_id')->constrained('devices')->onDelete('cascade');
+            // PENTING: device_id adalah STRING (Android ID), bukan foreign key
+            $table->string('device_id')->index();
             $table->string('app_name');
             $table->string('title');
             $table->text('content');
             $table->timestamp('timestamp')->useCurrent();
             
+            // Index untuk query cepat
             $table->index(['device_id', 'timestamp'], 'idx_device_time');
+            $table->index('app_name'); // Untuk filter by app
+            
+            // Foreign key constraint (optional, untuk data integrity)
+            // Relasi ke devices.device_id (bukan devices.id)
+            $table->foreign('device_id')
+                  ->references('device_id')
+                  ->on('devices')
+                  ->onDelete('cascade');
         });
     }
 
