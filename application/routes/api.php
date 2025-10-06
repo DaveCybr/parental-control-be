@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [DeviceController::class, 'index']);
         Route::get('{id}', [DeviceController::class, 'show']);
         Route::delete('{id}', [DeviceController::class, 'destroy']);
+        Route::get('/id_device/{id}', [DeviceController::class, 'getDevicesByParent']);
     });
 
     // Locations

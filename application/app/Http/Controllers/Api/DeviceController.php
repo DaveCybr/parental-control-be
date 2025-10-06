@@ -7,6 +7,8 @@ use App\Models\Device;
 use App\Models\ParentModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Events\DevicePaired;
 
 class DeviceController extends Controller
 {
@@ -18,6 +20,30 @@ class DeviceController extends Controller
 
         return response()->json([
             'success' => true,
+            'data' => $devices,
+        ]);
+    }
+
+    public function getDevicesByParent($parentId)
+    {
+        // Validasi apakah parent_id ada di database
+        $parentExists = ParentModel::where('id', $parentId)->exists();
+
+        if (!$parentExists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parent not found',
+            ], 404);
+        }
+
+        // Ambil semua devices yang terkait dengan parent_id
+        $devices = Device::where('parent_id', $parentId)
+            ->select('id', 'device_id', 'device_name', 'device_type', 'is_online', 'last_seen')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'parent_id' => $parentId,
             'data' => $devices,
         ]);
     }
@@ -107,12 +133,18 @@ class DeviceController extends Controller
             'device_type' => 'required|in:android,ios',
         ]);
 
+        Log::info('Pair request received', $request->all());
+
         // Cek apakah device sudah paired
         $existingDevice = Device::where('device_id', $request->device_id)->first();
 
         if ($existingDevice) {
-            // Device sudah paired, return info device yang ada
             $existingDevice->load('parent:id,email,family_code');
+
+            Log::info('Device already paired', [
+                'device_id' => $existingDevice->device_id,
+                'family_code' => $existingDevice->parent->family_code
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -129,6 +161,14 @@ class DeviceController extends Controller
         // Device belum paired, create baru
         $parent = ParentModel::where('family_code', $request->family_code)->first();
 
+        if (!$parent) {
+            Log::error('Parent not found for family code: ' . $request->family_code);
+            return response()->json([
+                'success' => false,
+                'message' => 'Family code not found',
+            ], 404);
+        }
+
         $device = Device::create([
             'parent_id' => $parent->id,
             'device_id' => $request->device_id,
@@ -136,7 +176,31 @@ class DeviceController extends Controller
             'device_type' => $request->device_type,
             'is_online' => true,
             'last_seen' => now(),
+            'created_at' => now(),
         ]);
+
+        Log::info('New device paired', [
+            'device_id' => $device->device_id,
+            'device_name' => $device->device_name,
+            'family_code' => $parent->family_code
+        ]);
+
+        // Kirim real-time notification via Laravel Broadcast
+        try {
+            broadcast(new DevicePaired($parent->family_code, [
+                'device_id' => $device->device_id,
+                'device_name' => $device->device_name,
+                'device_type' => $device->device_type,
+                'parent_id' => $parent->id,
+                'family_code' => $parent->family_code,
+                'paired_at' => now()->toISOString(),
+                'message' => 'Device berhasil dipasangkan dengan keluarga'
+            ]));
+
+            Log::info('Broadcast event sent for family: ' . $parent->family_code);
+        } catch (\Exception $e) {
+            Log::error('Failed to broadcast event: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
