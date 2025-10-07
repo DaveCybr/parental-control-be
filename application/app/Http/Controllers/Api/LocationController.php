@@ -7,6 +7,7 @@ use App\Models\Device;
 use App\Models\Location;
 use App\Services\GeofenceService;
 use Illuminate\Http\Request;
+use App\Events\LocationUpdated;
 
 class LocationController extends Controller
 {
@@ -41,7 +42,10 @@ class LocationController extends Controller
         ]);
 
         // Check geofence violations
-        $this->geofenceService->checkViolations($device, $location);
+        $violations = $this->geofenceService->checkViolations($device, $location);
+
+        // Broadcast location update via Pusher
+        event(new LocationUpdated($device, $location, $violations));
 
         return response()->json([
             'success' => true,
