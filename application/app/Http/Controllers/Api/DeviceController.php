@@ -5,13 +5,20 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Device;
 use App\Models\ParentModel;
+use App\Services\FCMService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Events\DevicePaired;
 
 class DeviceController extends Controller
 {
+    protected $fcmService;
+
+    public function __construct(FCMService $fcmService)
+    {
+        $this->fcmService = $fcmService;
+    }
+
     public function index(Request $request)
     {
         $devices = $request->user()->devices()
@@ -26,7 +33,6 @@ class DeviceController extends Controller
 
     public function getDevicesByParent($parentId)
     {
-        // Validasi apakah parent_id ada di database
         $parentExists = ParentModel::where('id', $parentId)->exists();
 
         if (!$parentExists) {
@@ -36,9 +42,8 @@ class DeviceController extends Controller
             ], 404);
         }
 
-        // Ambil semua devices yang terkait dengan parent_id
         $devices = Device::where('parent_id', $parentId)
-            ->select('id', 'device_id', 'device_name', 'device_type', 'is_online', 'last_seen')
+            ->select('id', 'device_id', 'device_name', 'device_type', 'fcm_token', 'is_online', 'last_seen')
             ->get();
 
         return response()->json([
@@ -60,7 +65,7 @@ class DeviceController extends Controller
     }
 
     /**
-     * BARU: Verify apakah device sudah paired
+     * Verify device pairing status
      */
     public function verify(Request $request)
     {
@@ -75,10 +80,9 @@ class DeviceController extends Controller
                 'success' => false,
                 'is_paired' => false,
                 'message' => 'Device not paired yet',
-            ], 200); // 200 bukan 404, karena ini bukan error
+            ], 200);
         }
 
-        // Load parent info
         $device->load('parent:id,email,family_code');
 
         return response()->json([
@@ -98,7 +102,7 @@ class DeviceController extends Controller
     }
 
     /**
-     * BARU: Unpair device
+     * Unpair device
      */
     public function unpair(Request $request)
     {
@@ -115,7 +119,6 @@ class DeviceController extends Controller
             ], 404);
         }
 
-        // Hapus device (cascade akan hapus locations, notifications, dll)
         $device->delete();
 
         return response()->json([
@@ -124,6 +127,9 @@ class DeviceController extends Controller
         ]);
     }
 
+    /**
+     * Pair device
+     */
     public function pair(Request $request)
     {
         $request->validate([
@@ -135,7 +141,6 @@ class DeviceController extends Controller
 
         Log::info('Pair request received', $request->all());
 
-        // Cek apakah device sudah paired
         $existingDevice = Device::where('device_id', $request->device_id)->first();
 
         if ($existingDevice) {
@@ -158,7 +163,6 @@ class DeviceController extends Controller
             ], 200);
         }
 
-        // Device belum paired, create baru
         $parent = ParentModel::where('family_code', $request->family_code)->first();
 
         if (!$parent) {
@@ -185,7 +189,6 @@ class DeviceController extends Controller
             'family_code' => $parent->family_code
         ]);
 
-        // Kirim real-time notification via Laravel Broadcast
         try {
             broadcast(new DevicePaired($parent->family_code, [
                 'device_id' => $device->device_id,
@@ -194,7 +197,7 @@ class DeviceController extends Controller
                 'parent_id' => $parent->id,
                 'family_code' => $parent->family_code,
                 'paired_at' => now()->toISOString(),
-                'message' => 'Device berhasil dipasangkan dengan keluarga'
+                'message' => 'Device berhasil dipasangkan'
             ]));
 
             Log::info('Broadcast event sent for family: ' . $parent->family_code);
@@ -214,6 +217,41 @@ class DeviceController extends Controller
         ], 201);
     }
 
+    /**
+     * Update FCM token
+     */
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'device_id' => 'required|string|exists:devices,device_id',
+            'fcm_token' => 'required|string|min:50',
+        ]);
+
+        $device = Device::where('device_id', $request->device_id)->first();
+
+        if (!$device) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Device not found',
+            ], 404);
+        }
+
+        $device->updateFcmToken($request->fcm_token);
+
+        Log::info('FCM token updated', [
+            'device_id' => $device->device_id,
+            'token_preview' => substr($request->fcm_token, 0, 20) . '...'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'FCM token updated successfully',
+        ]);
+    }
+
+    /**
+     * Update device status
+     */
     public function updateStatus(Request $request, $deviceId)
     {
         $request->validate([
@@ -234,6 +272,9 @@ class DeviceController extends Controller
         ]);
     }
 
+    /**
+     * Delete device
+     */
     public function destroy($id)
     {
         $device = Device::findOrFail($id);

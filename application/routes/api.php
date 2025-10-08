@@ -1,9 +1,9 @@
 <?php
 
-// routes/api.php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DeviceController;
+use App\Http\Controllers\Api\CommandController;
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\GeofenceController;
 use App\Http\Controllers\Api\NotificationController;
@@ -11,24 +11,25 @@ use App\Http\Controllers\Api\ScreenshotController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| Public Routes
 |--------------------------------------------------------------------------
 */
 
-// Public routes
+// Auth
 Route::prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
 });
 
-// Device pairing & verification (no auth required for child device)
+// Device pairing (no auth required for child device)
 Route::prefix('devices')->group(function () {
     Route::post('pair', [DeviceController::class, 'pair']);
-    Route::post('verify', [DeviceController::class, 'verify']); // BARU
-    Route::post('unpair', [DeviceController::class, 'unpair']); // BARU
+    Route::post('verify', [DeviceController::class, 'verify']);
+    Route::post('unpair', [DeviceController::class, 'unpair']);
+    Route::post('update-fcm-token', [DeviceController::class, 'updateFcmToken']); // BARU
 });
 
-// Device routes (for child device to send data)
+// Device data submission (no auth required for child device)
 Route::prefix('device')->group(function () {
     Route::post('locations', [LocationController::class, 'store']);
     Route::post('notifications', [NotificationController::class, 'store']);
@@ -36,7 +37,12 @@ Route::prefix('device')->group(function () {
     Route::put('{deviceId}/status', [DeviceController::class, 'updateStatus']);
 });
 
-// Protected routes (for parent dashboard)
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (Parent Only)
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('auth:sanctum')->group(function () {
 
     // Auth
@@ -51,6 +57,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('{id}', [DeviceController::class, 'show']);
         Route::delete('{id}', [DeviceController::class, 'destroy']);
         Route::get('/id_device/{id}', [DeviceController::class, 'getDevicesByParent']);
+    });
+
+    // Commands (BARU) - Parent send commands to child
+    Route::prefix('commands')->group(function () {
+        Route::post('capture-photo', [CommandController::class, 'capturePhoto']);
+        Route::post('request-location', [CommandController::class, 'requestLocation']);
+        Route::post('start-monitoring', [CommandController::class, 'startMonitoring']);
+        Route::post('stop-monitoring', [CommandController::class, 'stopMonitoring']);
+        Route::post('start-screen-monitor', [CommandController::class, 'startScreenMonitor']);
+        Route::post('stop-screen-monitor', [CommandController::class, 'stopScreenMonitor']);
+        Route::post('custom', [CommandController::class, 'sendCustomCommand']);
+        Route::post('broadcast', [CommandController::class, 'broadcastCommand']);
+        Route::post('test-fcm-token', [CommandController::class, 'testFcmToken']);
     });
 
     // Locations

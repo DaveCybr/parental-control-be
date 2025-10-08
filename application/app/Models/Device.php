@@ -1,5 +1,5 @@
 <?php
-// app/Models/Device.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,6 +18,8 @@ class Device extends Model
         'device_id',
         'device_name',
         'device_type',
+        'fcm_token',              // BARU
+        'fcm_token_updated_at',   // BARU
         'is_online',
         'last_seen',
     ];
@@ -26,6 +28,7 @@ class Device extends Model
         'is_online' => 'boolean',
         'last_seen' => 'datetime',
         'created_at' => 'datetime',
+        'fcm_token_updated_at' => 'datetime', // BARU
     ];
 
     public function parent(): BelongsTo
@@ -35,26 +38,41 @@ class Device extends Model
 
     public function locations(): HasMany
     {
-        return $this->hasMany(Location::class, 'device_id');
+        return $this->hasMany(Location::class, 'device_id', 'device_id');
     }
 
     public function notifications(): HasMany
     {
-        return $this->hasMany(Notification::class, 'device_id');
+        return $this->hasMany(Notification::class, 'device_id', 'device_id');
     }
 
     public function screenshots(): HasMany
     {
-        return $this->hasMany(Screenshot::class, 'device_id');
-    }
-
-    public function alerts(): HasMany
-    {
-        return $this->hasMany(Alert::class, 'device_id');
+        return $this->hasMany(Screenshot::class, 'device_id', 'device_id');
     }
 
     public function latestLocation()
     {
-        return $this->hasOne(Location::class, 'device_id')->latestOfMany('timestamp');
+        return $this->hasOne(Location::class, 'device_id', 'device_id')
+            ->latestOfMany('timestamp');
+    }
+
+    /**
+     * Check if device has valid FCM token
+     */
+    public function hasValidFcmToken(): bool
+    {
+        return !empty($this->fcm_token);
+    }
+
+    /**
+     * Update FCM token
+     */
+    public function updateFcmToken(string $token): bool
+    {
+        return $this->update([
+            'fcm_token' => $token,
+            'fcm_token_updated_at' => now(),
+        ]);
     }
 }
