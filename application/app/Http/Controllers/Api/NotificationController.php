@@ -16,7 +16,7 @@ class NotificationController extends Controller
             'device_id' => 'required|exists:devices,device_id',
             'app_name' => 'required|string',
             'title' => 'required|string',
-            'content' => 'required|string',
+            'content' => 'string',
         ]);
 
         $device = Device::where('device_id', $request->device_id)->firstOrFail();
@@ -68,4 +68,3 @@ class NotificationController extends Controller
         ]);
     }
 }
-
