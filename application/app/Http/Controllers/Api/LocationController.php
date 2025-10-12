@@ -13,10 +13,10 @@ class LocationController extends Controller
 {
     protected $geofenceService;
 
-    // public function __construct(GeofenceService $geofenceService)
-    // {
-    //     $this->geofenceService = $geofenceService;
-    // }
+    public function __construct(GeofenceService $geofenceService)
+    {
+        $this->geofenceService = $geofenceService;
+    }
 
     public function store(Request $request)
     {
@@ -41,7 +41,7 @@ class LocationController extends Controller
             'last_seen' => now(),
         ]);
 
-        // Check geofence violations
+        // Check geofence violations & send FCM to parent if violated
         $violations = $this->geofenceService->checkViolations($device, $location);
 
         // Broadcast location update via Pusher
@@ -50,6 +50,7 @@ class LocationController extends Controller
         return response()->json([
             'success' => true,
             'data' => $location,
+            'violations' => $violations,
             'message' => 'Location updated',
         ], 201);
     }

@@ -18,8 +18,8 @@ class Device extends Model
         'device_id',
         'device_name',
         'device_type',
-        'fcm_token',              // BARU
-        'fcm_token_updated_at',   // BARU
+        'fcm_token',
+        'fcm_token_updated_at',
         'is_online',
         'last_seen',
     ];
@@ -28,7 +28,7 @@ class Device extends Model
         'is_online' => 'boolean',
         'last_seen' => 'datetime',
         'created_at' => 'datetime',
-        'fcm_token_updated_at' => 'datetime', // BARU
+        'fcm_token_updated_at' => 'datetime',
     ];
 
     public function parent(): BelongsTo
@@ -51,10 +51,23 @@ class Device extends Model
         return $this->hasMany(Screenshot::class, 'device_id', 'device_id');
     }
 
+    // BARU - Relationship untuk captured photos
+    public function capturedPhotos(): HasMany
+    {
+        return $this->hasMany(CapturedPhoto::class, 'device_id', 'device_id');
+    }
+
     public function latestLocation()
     {
         return $this->hasOne(Location::class, 'device_id', 'device_id')
             ->latestOfMany('timestamp');
+    }
+
+    // BARU - Latest captured photo
+    public function latestCapturedPhoto()
+    {
+        return $this->hasOne(CapturedPhoto::class, 'device_id', 'device_id')
+            ->latestOfMany('captured_at');
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\GeofenceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ScreenshotController;
+use App\Http\Controllers\Api\CapturedPhotoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +27,7 @@ Route::prefix('devices')->group(function () {
     Route::post('pair', [DeviceController::class, 'pair']);
     Route::post('verify', [DeviceController::class, 'verify']);
     Route::post('unpair', [DeviceController::class, 'unpair']);
-    Route::post('update-fcm-token', [DeviceController::class, 'updateFcmToken']); // BARU
+    Route::post('update-fcm-token', [DeviceController::class, 'updateFcmToken']);
 });
 
 // Device data submission (no auth required for child device)
@@ -34,6 +35,7 @@ Route::prefix('device')->group(function () {
     Route::post('locations', [LocationController::class, 'store']);
     Route::post('notifications', [NotificationController::class, 'store']);
     Route::post('screenshots', [ScreenshotController::class, 'store']);
+    Route::post('captured-photos', [CapturedPhotoController::class, 'store']);
     Route::put('{deviceId}/status', [DeviceController::class, 'updateStatus']);
 });
 
@@ -49,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('profile', [AuthController::class, 'profile']);
+        Route::post('update-fcm-token', [AuthController::class, 'updateFcmToken']); // BARU
     });
 
     // Devices
@@ -59,7 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/id_device/{id}', [DeviceController::class, 'getDevicesByParent']);
     });
 
-    // Commands (BARU) - Parent send commands to child
+    // Commands - Parent send commands to child
     Route::prefix('commands')->group(function () {
         Route::post('capture-photo', [CommandController::class, 'capturePhoto']);
         Route::post('request-location', [CommandController::class, 'requestLocation']);
@@ -93,5 +96,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('screenshots')->group(function () {
         Route::get('{deviceId}', [ScreenshotController::class, 'index']);
         Route::delete('{id}', [ScreenshotController::class, 'destroy']);
+    });
+
+    // Captured Photos
+    Route::prefix('captured-photos')->group(function () {
+        Route::get('{deviceId}', [CapturedPhotoController::class, 'index']);
+        Route::get('{deviceId}/latest', [CapturedPhotoController::class, 'latest']);
+        Route::delete('{id}', [CapturedPhotoController::class, 'destroy']);
+        Route::post('bulk-delete', [CapturedPhotoController::class, 'bulkDestroy']);
     });
 });

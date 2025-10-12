@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+
 class ParentModel extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -19,6 +20,8 @@ class ParentModel extends Authenticatable
         'email',
         'password',
         'family_code',
+        'fcm_token',              // BARU
+        'fcm_token_updated_at',   // BARU
     ];
 
     protected $hidden = [
@@ -27,6 +30,7 @@ class ParentModel extends Authenticatable
 
     protected $casts = [
         'created_at' => 'datetime',
+        'fcm_token_updated_at' => 'datetime', // BARU
     ];
 
     public function devices(): HasMany
@@ -39,8 +43,22 @@ class ParentModel extends Authenticatable
         return $this->hasMany(Geofence::class, 'parent_id');
     }
 
-    // public function alerts(): HasMany
-    // {
-    //     return $this->hasMany(Alert::class, 'parent_id');
-    // }
+    /**
+     * Check if parent has valid FCM token
+     */
+    public function hasValidFcmToken(): bool
+    {
+        return !empty($this->fcm_token);
+    }
+
+    /**
+     * Update FCM token
+     */
+    public function updateFcmToken(string $token): bool
+    {
+        return $this->update([
+            'fcm_token' => $token,
+            'fcm_token_updated_at' => now(),
+        ]);
+    }
 }
