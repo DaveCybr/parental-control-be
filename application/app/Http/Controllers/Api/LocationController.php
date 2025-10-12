@@ -13,10 +13,10 @@ class LocationController extends Controller
 {
     protected $geofenceService;
 
-    public function __construct(GeofenceService $geofenceService)
-    {
-        $this->geofenceService = $geofenceService;
-    }
+    // public function __construct(GeofenceService $geofenceService)
+    // {
+    //     $this->geofenceService = $geofenceService;
+    // }
 
     public function store(Request $request)
     {
