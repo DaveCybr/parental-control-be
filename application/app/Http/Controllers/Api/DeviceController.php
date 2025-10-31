@@ -183,11 +183,11 @@ class DeviceController extends Controller
             'created_at' => now(),
         ]);
 
-        Log::info('New device paired', [
-            'device_id' => $device->device_id,
-            'device_name' => $device->device_name,
-            'family_code' => $parent->family_code
-        ]);
+        // Log::info('New device paired', [
+        //     'device_id' => $device->device_id,
+        //     'device_name' => $device->device_name,
+        //     'family_code' => $parent->family_code
+        // ]);
 
         try {
             broadcast(new DevicePaired($parent->family_code, [
