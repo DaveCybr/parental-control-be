@@ -7,7 +7,6 @@ use App\Models\Device;
 use App\Models\ParentModel;
 use App\Services\FCMService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class CommandController extends Controller
 {

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Device;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 
@@ -96,10 +95,6 @@ class FCMService
             ]);
 
             if (!$response->successful()) {
-                Log::error('Failed to get access token', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
                 throw new \Exception('Failed to get access token: ' . $response->body());
             }
 
@@ -111,9 +106,7 @@ class FCMService
 
             return $result['access_token'];
         } catch (\Exception $e) {
-            Log::error('Access token generation failed', [
-                'error' => $e->getMessage(),
-            ]);
+
             throw $e;
         }
     }
@@ -154,11 +147,6 @@ class FCMService
 
             return $response;
         } catch (\Exception $e) {
-            Log::error('FCM send command error', [
-                'device_id' => $deviceId,
-                'error' => $e->getMessage()
-            ]);
-
             return [
                 'success' => false,
                 'message' => 'Failed to send command: ' . $e->getMessage()
@@ -190,10 +178,7 @@ class FCMService
                 ],
             ];
 
-            Log::info('Sending FCM v1 message', [
-                'token_preview' => substr($fcmToken, 0, 20) . '...',
-                'data' => $data
-            ]);
+
 
             // Send request
             $response = Http::withHeaders([
@@ -203,10 +188,7 @@ class FCMService
 
             $result = $response->json();
 
-            Log::info('FCM v1 response', [
-                'status' => $response->status(),
-                'result' => $result
-            ]);
+
 
             if ($response->successful()) {
                 return [
@@ -222,9 +204,7 @@ class FCMService
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('FCM v1 request failed', [
-                'error' => $e->getMessage(),
-            ]);
+
 
             return [
                 'success' => false,
