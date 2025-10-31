@@ -139,17 +139,17 @@ class DeviceController extends Controller
             'device_type' => 'required|in:android,ios',
         ]);
 
-        Log::info('Pair request received', $request->all());
+        // Log::info('Pair request received', $request->all());
 
         $existingDevice = Device::where('device_id', $request->device_id)->first();
 
         if ($existingDevice) {
             $existingDevice->load('parent:id,email,family_code');
 
-            Log::info('Device already paired', [
-                'device_id' => $existingDevice->device_id,
-                'family_code' => $existingDevice->parent->family_code
-            ]);
+            // Log::info('Device already paired', [
+            //     'device_id' => $existingDevice->device_id,
+            //     'family_code' => $existingDevice->parent->family_code
+            // ]);
 
             return response()->json([
                 'success' => true,
@@ -166,7 +166,7 @@ class DeviceController extends Controller
         $parent = ParentModel::where('family_code', $request->family_code)->first();
 
         if (!$parent) {
-            Log::error('Parent not found for family code: ' . $request->family_code);
+            // Log::error('Parent not found for family code: ' . $request->family_code);
             return response()->json([
                 'success' => false,
                 'message' => 'Family code not found',
@@ -200,9 +200,9 @@ class DeviceController extends Controller
                 'message' => 'Device berhasil dipasangkan'
             ]));
 
-            Log::info('Broadcast event sent for family: ' . $parent->family_code);
+            // Log::info('Broadcast event sent for family: ' . $parent->family_code);
         } catch (\Exception $e) {
-            Log::error('Failed to broadcast event: ' . $e->getMessage());
+            // Log::error('Failed to broadcast event: ' . $e->getMessage());
         }
 
         return response()->json([
