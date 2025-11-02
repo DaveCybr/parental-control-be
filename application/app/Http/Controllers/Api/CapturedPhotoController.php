@@ -25,12 +25,35 @@ class CapturedPhotoController extends Controller
         try {
             $device = Device::where('device_id', $request->device_id)->firstOrFail();
 
+            // ✅ Ensure directory exists
+            $directory = 'captured_photos';
+            $fullPath = storage_path('app/public/' . $directory);
+            
+            if (!file_exists($fullPath)) {
+            
+                
+                // Try to create with mkdir
+                if (!mkdir($fullPath, 0775, true)) {
+                    // If mkdir fails, try Storage facade
+                    Storage::disk('public')->makeDirectory($directory);
+                }
+                
+                // Set permissions
+                @chmod($fullPath, 0775);
+                
+            }
+
             // Generate unique filename
             $timestamp = now()->format('YmdHis');
             $filename = "{$request->device_id}_{$request->camera_type}_{$timestamp}.jpg";
 
             // Upload file to storage/app/public/captured_photos
-            $path = $request->file('photo')->storeAs('captured_photos', $filename, 'public');
+            $path = $request->file('photo')->storeAs($directory, $filename, 'public');
+            
+            if (!$path) {
+                throw new \Exception('Failed to store file');
+            }
+            
             $url = Storage::url($path);
 
             // Save to database
@@ -41,12 +64,25 @@ class CapturedPhotoController extends Controller
                 'captured_at' => now(),
             ]);
 
+    
+
             return response()->json([
                 'success' => true,
                 'data' => $photo,
                 'message' => 'Photo captured successfully',
             ], 201);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+         
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+            
         } catch (\Exception $e) {
+          
 
             return response()->json([
                 'success' => false,
@@ -138,7 +174,7 @@ class CapturedPhotoController extends Controller
                 'message' => 'Photo deleted successfully',
             ]);
         } catch (\Exception $e) {
-
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete photo: ' . $e->getMessage(),
@@ -171,6 +207,8 @@ class CapturedPhotoController extends Controller
                 $photo->delete();
                 $deletedCount++;
             }
+
+         
 
             return response()->json([
                 'success' => true,
