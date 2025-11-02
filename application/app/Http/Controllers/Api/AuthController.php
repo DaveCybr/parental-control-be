@@ -94,11 +94,6 @@ class AuthController extends Controller
         $parent = $request->user();
         $parent->updateFcmToken($request->fcm_token);
 
-        Log::info('Parent FCM token updated', [
-            'parent_id' => $parent->id,
-            'token_preview' => substr($request->fcm_token, 0, 20) . '...'
-        ]);
-
         return response()->json([
             'success' => true,
             'message' => 'FCM token updated successfully',

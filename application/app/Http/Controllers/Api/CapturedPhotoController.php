@@ -41,22 +41,12 @@ class CapturedPhotoController extends Controller
                 'captured_at' => now(),
             ]);
 
-            Log::info('Photo captured successfully', [
-                'device_id' => $device->device_id,
-                'camera_type' => $request->camera_type,
-                'file_url' => $url
-            ]);
-
             return response()->json([
                 'success' => true,
                 'data' => $photo,
                 'message' => 'Photo captured successfully',
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Failed to store captured photo', [
-                'device_id' => $request->device_id,
-                'error' => $e->getMessage()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -138,7 +128,6 @@ class CapturedPhotoController extends Controller
 
             if (Storage::disk('public')->exists($path)) {
                 Storage::disk('public')->delete($path);
-                Log::info('Photo file deleted from storage', ['path' => $path]);
             }
 
             // Delete from database
@@ -149,10 +138,6 @@ class CapturedPhotoController extends Controller
                 'message' => 'Photo deleted successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to delete photo', [
-                'photo_id' => $id,
-                'error' => $e->getMessage()
-            ]);
 
             return response()->json([
                 'success' => false,
@@ -193,9 +178,6 @@ class CapturedPhotoController extends Controller
                 'deleted_count' => $deletedCount,
             ]);
         } catch (\Exception $e) {
-            Log::error('Failed to bulk delete photos', [
-                'error' => $e->getMessage()
-            ]);
 
             return response()->json([
                 'success' => false,
