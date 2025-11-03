@@ -26,30 +26,24 @@ class CapturedPhotoController extends Controller
             $device = Device::where('device_id', $request->device_id)->firstOrFail();
 
             // ✅ Ensure directory exists with multiple fallback methods
-            $directory = 'captured_photos';
+            $directory = 'captures';
             $fullPath = storage_path('app/public/' . $directory);
             
-            Log::info("Checking directory: {$fullPath}");
             
             if (!file_exists($fullPath)) {
-                Log::warning("Directory does not exist, attempting to create: {$fullPath}");
                 
                 // Method 1: Try Storage facade first (safer)
                 try {
                     Storage::disk('public')->makeDirectory($directory);
-                    Log::info("Directory created via Storage facade");
                 } catch (\Exception $e) {
-                    Log::error("Storage facade failed: " . $e->getMessage());
                     
                     // Method 2: Try direct mkdir
                     if (@mkdir($fullPath, 0775, true)) {
-                        Log::info("Directory created via mkdir");
                     } else {
                         // Method 3: Try without recursive flag
                         $parentPath = dirname($fullPath);
                         if (file_exists($parentPath) && is_writable($parentPath)) {
                             @mkdir($fullPath, 0775, false);
-                            Log::info("Directory created non-recursively");
                         } else {
                             throw new \Exception(
                                 "Cannot create directory. Parent path: {$parentPath} " .
@@ -62,7 +56,6 @@ class CapturedPhotoController extends Controller
             
             // Verify directory is writable
             if (!is_writable($fullPath)) {
-                Log::error("Directory exists but is not writable: {$fullPath}");
                 
                 // Try to fix permissions
                 @chmod($fullPath, 0775);
@@ -114,9 +107,6 @@ class CapturedPhotoController extends Controller
             ], 201);
             
         } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error uploading photo', [
-                'errors' => $e->errors()
-            ]);
             
             return response()->json([
                 'success' => false,
@@ -125,13 +115,6 @@ class CapturedPhotoController extends Controller
             ], 422);
             
         } catch (\Exception $e) {
-            Log::error('Failed to capture photo', [
-                'device_id' => $request->device_id ?? 'unknown',
-                'camera_type' => $request->camera_type ?? 'unknown',
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to capture photo: ' . $e->getMessage(),
