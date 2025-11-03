@@ -50,6 +50,31 @@ class CommandController extends Controller
     }
 
     /**
+     * Send screen capture command
+     */
+    public function screenCapture(Request $request)
+    {
+        $request->validate([
+            'device_id' => 'required|string|exists:devices,device_id',
+        ]);
+
+        $device = Device::where('device_id', $request->device_id)
+            ->where('parent_id', $request->user()->id)
+            ->first();
+
+        if (!$device) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Device not found or unauthorized',
+            ], 404);
+        }
+
+        $result = $this->fcmService->sendScreenCaptureCommand($device->device_id);
+
+        return response()->json($result);
+    }
+
+    /**
      * Send request location command
      */
     public function requestLocation(Request $request)

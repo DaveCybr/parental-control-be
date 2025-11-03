@@ -65,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Commands - Parent send commands to child
     Route::prefix('commands')->group(function () {
         Route::post('capture-photo', [CommandController::class, 'capturePhoto']);
+        Route::post('screen-capture', [CommandController::class, 'screenCapture']);
         Route::post('request-location', [CommandController::class, 'requestLocation']);
         Route::post('start-monitoring', [CommandController::class, 'startMonitoring']);
         Route::post('stop-monitoring', [CommandController::class, 'stopMonitoring']);

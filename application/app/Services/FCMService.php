@@ -246,6 +246,17 @@ class FCMService
     }
 
     /**
+     * Send screen capture command
+     */
+    public function sendScreenCaptureCommand(string $deviceId): array
+    {
+        return $this->sendCommand($deviceId, [
+            'type' => 'SCREEN_CAPTURE',
+            'timestamp' => now()->toISOString(),
+        ]);
+    }
+
+    /**
      * Send location request command
      */
     public function sendRequestLocationCommand(string $deviceId): array
