@@ -54,11 +54,7 @@ class GeofenceService
         }
 
         if (!empty($violations)) {
-            Log::warning('Geofence violations detected', [
-                'device_id' => $device->device_id,
-                'violations_count' => count($violations),
-                'violations' => $violations
-            ]);
+            
         }
 
         return $violations;
@@ -77,10 +73,7 @@ class GeofenceService
             $parent = $device->parent;
 
             if (!$parent || !$parent->hasValidFcmToken()) {
-                Log::warning('Parent FCM token not found', [
-                    'parent_id' => $device->parent_id,
-                    'device_id' => $device->device_id
-                ]);
+                
                 return;
             }
 
@@ -109,24 +102,12 @@ class GeofenceService
             );
 
             if ($result['success']) {
-                Log::info('Geofence alert sent to parent', [
-                    'parent_id' => $parent->id,
-                    'device_id' => $device->device_id,
-                    'geofence_name' => $geofence->name
-                ]);
+                
             } else {
-                Log::error('Failed to send geofence alert', [
-                    'parent_id' => $parent->id,
-                    'device_id' => $device->device_id,
-                    'error' => $result['message']
-                ]);
+                
             }
         } catch (\Exception $e) {
-            Log::error('Geofence alert error', [
-                'device_id' => $device->device_id,
-                'geofence_id' => $geofence->id,
-                'error' => $e->getMessage()
-            ]);
+            
         }
     }
 
