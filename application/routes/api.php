@@ -45,7 +45,6 @@ Route::prefix('device')->group(function () {
 | Protected Routes (Parent Only)
 |--------------------------------------------------------------------------
 */
-Route::post('update-fcm-token', [AuthController::class, 'updateFcmToken']); // BARU
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -54,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('profile', [AuthController::class, 'profile']);
         Route::post('check-device', [AuthController::class, 'checkConnectedDevices']);
+        Route::post('update-fcm-token', [AuthController::class, 'updateFcmToken']); // BARU
     });
 
     // Devices
