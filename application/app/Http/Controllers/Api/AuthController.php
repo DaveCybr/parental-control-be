@@ -100,8 +100,9 @@ class AuthController extends Controller
         ]);
     }
 
-    public function checkConnectedDevices($parentId)
+    public function checkConnectedDevices(Request $request)
     {
+        $parentId = $request->parent_id;
         // Cari parent berdasarkan ID
         $parent = ParentModel::with('devices')->find($parentId);
 
