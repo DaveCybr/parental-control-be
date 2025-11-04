@@ -99,4 +99,41 @@ class AuthController extends Controller
             'message' => 'FCM token updated successfully',
         ]);
     }
+
+    public function checkConnectedDevices($parentId)
+    {
+        // Cari parent berdasarkan ID
+        $parent = ParentModel::with('devices')->find($parentId);
+
+        if (!$parent) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Parent tidak ditemukan.',
+            ], 404);
+        }
+
+        // Hitung jumlah device yang terhubung
+        $connectedDeviceCount = $parent->devices->count();
+
+        if ($connectedDeviceCount > 0) {
+            return response()->json([
+                'status' => true,
+                'message' => "Parent memiliki {$connectedDeviceCount} device yang terhubung.",
+                'data' => [
+                    'parent_id' => $parent->id,
+                    'connected_devices' => $parent->devices,
+                ]
+            ]);
+        }
+
+        // Jika belum ada device terhubung
+        return response()->json([
+            'status' => false,
+            'message' => 'Parent belum memiliki device yang terhubung.',
+            'data' => [
+                'parent_id' => $parent->id,
+                'connected_devices' => [],
+            ]
+        ]);
+    }
 }
