@@ -7,6 +7,7 @@ use App\Models\Location;
 use App\Models\Geofence;
 use Illuminate\Support\Facades\Log;
 use App\Services\FCMService;
+use Illuminate\Support\Facades\DB;
 
 class GeofenceService
 {
@@ -54,7 +55,6 @@ class GeofenceService
         }
 
         if (!empty($violations)) {
-            
         }
 
         return $violations;
@@ -73,7 +73,6 @@ class GeofenceService
             $parent = $device->parent;
 
             if (!$parent || !$parent->hasValidFcmToken()) {
-                
                 return;
             }
 
@@ -101,13 +100,19 @@ class GeofenceService
                 $data
             );
 
+            // Optional: Save to notifications table for history
             if ($result['success']) {
-                
-            } else {
-                
+                DB::table('notifications')->insert([
+                    'device_id' => $device->device_id,
+                    'app_name' => 'GeofenceService',
+                    'title' => $notification['title'],
+                    'content' => $notification['body'],
+                    'timestamp' => now(),
+                ]);
             }
         } catch (\Exception $e) {
-            
+            // Silent fail or bisa pakai report() untuk monitoring
+            // report($e); 
         }
     }
 
