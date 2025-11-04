@@ -66,9 +66,10 @@ class GeofenceService
 
             // Prepare notification data
             $notification = [
-                'title' => '⚠️ Geofence Alert',
-                'body' => "{$device->device_name} has left {$geofence->name}",
+                'title' => 'Peringatan Keamanan Anak',
+                'body'  => "Perangkat {$device->device_name} telah meninggalkan zona '{$geofence->name}'. segera cek lokasinya.",
             ];
+
 
             $data = [
                 'type' => 'GEOFENCE_VIOLATION',
