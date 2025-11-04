@@ -219,13 +219,9 @@ class FCMService
     public function sendNotificationToParent(string $fcmToken, array $notification, array $data): array
     {
         try {
-            // Get access token
             $accessToken = $this->getAccessToken();
-
-            // FCM v1 API URL
             $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
 
-            // Prepare payload with notification
             $payload = [
                 'message' => [
                     'token' => $fcmToken,
@@ -235,13 +231,13 @@ class FCMService
                     ],
                     'data' => $this->convertDataToStringArray($data),
                     'android' => [
-                        'priority' => 'high',
+                        'priority' => 'HIGH', // <-- Pindahkan ke sini, bukan di notification
                         'notification' => [
                             'sound' => 'default',
                             'channel_id' => 'geofence_alerts',
-                            'priority' => 'high',
                             'default_vibrate_timings' => true,
                         ],
+                        'ttl' => '3600s',
                     ],
                     'apns' => [
                         'payload' => [
@@ -254,7 +250,6 @@ class FCMService
                 ],
             ];
 
-            // Send request
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $accessToken,
                 'Content-Type' => 'application/json',
