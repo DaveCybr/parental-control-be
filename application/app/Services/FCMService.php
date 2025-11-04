@@ -214,6 +214,76 @@ class FCMService
     }
 
     /**
+     * Send notification to parent device
+     */
+    public function sendNotificationToParent(string $fcmToken, array $notification, array $data): array
+    {
+        try {
+            // Get access token
+            $accessToken = $this->getAccessToken();
+
+            // FCM v1 API URL
+            $url = "https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send";
+
+            // Prepare payload with notification
+            $payload = [
+                'message' => [
+                    'token' => $fcmToken,
+                    'notification' => [
+                        'title' => $notification['title'] ?? '',
+                        'body' => $notification['body'] ?? '',
+                    ],
+                    'data' => $this->convertDataToStringArray($data),
+                    'android' => [
+                        'priority' => 'high',
+                        'notification' => [
+                            'sound' => 'default',
+                            'channel_id' => 'geofence_alerts',
+                            'priority' => 'high',
+                            'default_vibrate_timings' => true,
+                        ],
+                    ],
+                    'apns' => [
+                        'payload' => [
+                            'aps' => [
+                                'sound' => 'default',
+                                'badge' => 1,
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+
+            // Send request
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
+                'Content-Type' => 'application/json',
+            ])->post($url, $payload);
+
+            $result = $response->json();
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'message' => 'Notification sent successfully',
+                    'fcm_response' => $result
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'FCM send failed',
+                    'fcm_response' => $result
+                ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'FCM notification request failed: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Convert data to string array (FCM v1 requirement)
      */
     protected function convertDataToStringArray(array $data): array
