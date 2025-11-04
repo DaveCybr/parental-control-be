@@ -22,13 +22,13 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 });
 
-Route::post('update-fcm-token', [DeviceController::class, 'updateFcmToken']);
 
 // Device pairing (no auth required for child device)
 Route::prefix('devices')->group(function () {
     Route::post('pair', [DeviceController::class, 'pair']);
     Route::post('verify', [DeviceController::class, 'verify']);
     Route::post('unpair', [DeviceController::class, 'unpair']);
+    Route::post('update-fcm-token', [DeviceController::class, 'updateFcmToken']);
 });
 
 // Device data submission (no auth required for child device)
@@ -45,6 +45,7 @@ Route::prefix('device')->group(function () {
 | Protected Routes (Parent Only)
 |--------------------------------------------------------------------------
 */
+Route::post('update-fcm-token', [AuthController::class, 'updateFcmToken']); // BARU
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -52,7 +53,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('profile', [AuthController::class, 'profile']);
-        Route::post('update-fcm-token', [AuthController::class, 'updateFcmToken']); // BARU
         Route::post('check-device', [AuthController::class, 'checkConnectedDevices']);
     });
 
