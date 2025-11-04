@@ -22,12 +22,13 @@ Route::prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login']);
 });
 
+Route::post('update-fcm-token', [DeviceController::class, 'updateFcmToken']);
+
 // Device pairing (no auth required for child device)
 Route::prefix('devices')->group(function () {
     Route::post('pair', [DeviceController::class, 'pair']);
     Route::post('verify', [DeviceController::class, 'verify']);
     Route::post('unpair', [DeviceController::class, 'unpair']);
-    Route::post('update-fcm-token', [DeviceController::class, 'updateFcmToken']);
 });
 
 // Device data submission (no auth required for child device)
