@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ScreenshotController;
 use App\Http\Controllers\Api\CapturedPhotoController;
 use App\Http\Controllers\Api\AlbumController;
+use App\Http\Controllers\Api\TestFCMController;
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -45,6 +47,12 @@ Route::prefix('device')->group(function () {
 | Protected Routes (Parent Only)
 |--------------------------------------------------------------------------
 */
+
+Route::prefix('test/fcm')->group(function () {
+    Route::post('/notification', [TestFCMController::class, 'testNotificationToParent']);
+    Route::post('/geofence-alert', [TestFCMController::class, 'testGeofenceAlert']);
+    Route::post('/direct', [TestFCMController::class, 'testDirectNotification']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
 

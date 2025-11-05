@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Device;
 use App\Models\Location;
 use App\Models\Geofence;
-use Illuminate\Support\Facades\Log;
+use App\Models\Notification;
 use App\Services\FCMService;
 
 class GeofenceService
@@ -19,10 +19,6 @@ class GeofenceService
 
     /**
      * Check geofence violations for a device location
-     * 
-     * @param Device $device
-     * @param Location $location
-     * @return array Violations array
      */
     public function checkViolations(Device $device, Location $location): array
     {
@@ -53,19 +49,11 @@ class GeofenceService
             }
         }
 
-        if (!empty($violations)) {
-            
-        }
-
         return $violations;
     }
 
     /**
      * Send geofence alert notification to parent
-     * 
-     * @param Device $device
-     * @param Geofence $geofence
-     * @param Location $location
      */
     protected function sendGeofenceAlert(Device $device, Geofence $geofence, Location $location): void
     {
@@ -73,15 +61,15 @@ class GeofenceService
             $parent = $device->parent;
 
             if (!$parent || !$parent->hasValidFcmToken()) {
-                
                 return;
             }
 
             // Prepare notification data
             $notification = [
-                'title' => '⚠️ Geofence Alert',
-                'body' => "{$device->device_name} has left {$geofence->name}",
+                'title' => 'Peringatan Keamanan Anak',
+                'body'  => "Perangkat {$device->device_name} telah meninggalkan zona '{$geofence->name}'. segera cek lokasinya.",
             ];
+
 
             $data = [
                 'type' => 'GEOFENCE_VIOLATION',
@@ -101,24 +89,23 @@ class GeofenceService
                 $data
             );
 
+            // Save to notifications table using Eloquent model
             if ($result['success']) {
-                
-            } else {
-                
+                Notification::create([
+                    'device_id' => $device->device_id,
+                    'app_name' => 'GeofenceService',
+                    'title' => $notification['title'],
+                    'content' => $notification['body'],
+                    'timestamp' => now(),
+                ]);
             }
         } catch (\Exception $e) {
-            
+            // Silent fail - bisa tambahkan report($e) untuk monitoring di production
         }
     }
 
     /**
      * Calculate distance between two coordinates (Haversine formula)
-     * 
-     * @param float $lat1
-     * @param float $lng1
-     * @param float $lat2
-     * @param float $lng2
-     * @return float Distance in meters
      */
     public function calculateDistance($lat1, $lng1, $lat2, $lng2): float
     {
