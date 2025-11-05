@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\GeofenceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ScreenshotController;
 use App\Http\Controllers\Api\CapturedPhotoController;
-
+use App\Http\Controllers\Api\AlbumController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -47,6 +47,9 @@ Route::prefix('device')->group(function () {
 */
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/album', [AlbumController::class, 'getAlbum']);
+    Route::delete('/album/item', [AlbumController::class, 'deleteAlbumItem']);
 
     // Auth
     Route::prefix('auth')->group(function () {
