@@ -26,7 +26,7 @@ class ScreenshotController extends Controller
 
         $screenshot = Screenshot::create([
             'device_id' => $device->device_id,
-            'file_url' => $url,
+            'file_url' => 'application/storage/' . $url,
             'timestamp' => now(),
         ]);
 
@@ -67,7 +67,7 @@ class ScreenshotController extends Controller
     public function destroy($id)
     {
         $screenshot = Screenshot::findOrFail($id);
-        
+
         // Delete file from storage
         $path = str_replace('/storage/', '', $screenshot->file_url);
         Storage::disk('public')->delete($path);
