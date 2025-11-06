@@ -7,7 +7,6 @@ use App\Models\Device;
 use App\Models\CapturedPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 
 class CapturedPhotoController extends Controller
 {
@@ -28,15 +27,15 @@ class CapturedPhotoController extends Controller
             // ✅ Ensure directory exists with multiple fallback methods
             $directory = 'captures';
             $fullPath = storage_path('app/public/' . $directory);
-            
-            
+
+
             if (!file_exists($fullPath)) {
-                
+
                 // Method 1: Try Storage facade first (safer)
                 try {
                     Storage::disk('public')->makeDirectory($directory);
                 } catch (\Exception $e) {
-                    
+
                     // Method 2: Try direct mkdir
                     if (@mkdir($fullPath, 0775, true)) {
                     } else {
@@ -47,30 +46,29 @@ class CapturedPhotoController extends Controller
                         } else {
                             throw new \Exception(
                                 "Cannot create directory. Parent path: {$parentPath} " .
-                                (file_exists($parentPath) ? "exists but not writable" : "does not exist")
+                                    (file_exists($parentPath) ? "exists but not writable" : "does not exist")
                             );
                         }
                     }
                 }
             }
-            
+
             // Verify directory is writable
             if (!is_writable($fullPath)) {
-                
+
                 // Try to fix permissions
                 @chmod($fullPath, 0775);
-                
+
                 if (!is_writable($fullPath)) {
                     throw new \Exception(
                         "Directory is not writable: {$fullPath}. " .
-                        "Current permissions: " . substr(sprintf('%o', fileperms($fullPath)), -4) . ". " .
-                        "Owner: " . posix_getpwuid(fileowner($fullPath))['name'] . ". " .
-                        "Group: " . posix_getgrgid(filegroup($fullPath))['name']
+                            "Current permissions: " . substr(sprintf('%o', fileperms($fullPath)), -4) . ". " .
+                            "Owner: " . posix_getpwuid(fileowner($fullPath))['name'] . ". " .
+                            "Group: " . posix_getgrgid(filegroup($fullPath))['name']
                     );
                 }
             }
-            
-            Log::info("Directory is ready and writable: {$fullPath}");
+
 
             // Generate unique filename
             $timestamp = now()->format('YmdHis');
@@ -78,12 +76,12 @@ class CapturedPhotoController extends Controller
 
             // Upload file to storage/app/public/captured_photos
             $path = $request->file('photo')->storeAs($directory, $filename, 'public');
-            
+
             if (!$path) {
                 throw new \Exception('Failed to store file');
             }
-            
-            $url = Storage::url($path);
+
+            $url = 'https://parentalcontrol.satelliteorbit.cloud/application/public/storage/' . $directory . '/' . $filename; // Example: https://parentalcontrol.satelliteorbit.cloud/storage/captures/xxxx.jpg
 
             // Save to database
             $photo = CapturedPhoto::create([
@@ -93,27 +91,19 @@ class CapturedPhotoController extends Controller
                 'captured_at' => now(),
             ]);
 
-            Log::info("Photo captured successfully", [
-                'device_id' => $device->device_id,
-                'camera_type' => $request->camera_type,
-                'path' => $path,
-                'url' => $url
-            ]);
 
             return response()->json([
                 'success' => true,
                 'data' => $photo,
                 'message' => 'Photo captured successfully',
             ], 201);
-            
         } catch (\Illuminate\Validation\ValidationException $e) {
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $e->errors(),
             ], 422);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -205,7 +195,7 @@ class CapturedPhotoController extends Controller
                 'message' => 'Photo deleted successfully',
             ]);
         } catch (\Exception $e) {
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete photo: ' . $e->getMessage(),
@@ -239,7 +229,7 @@ class CapturedPhotoController extends Controller
                 $deletedCount++;
             }
 
-         
+
 
             return response()->json([
                 'success' => true,
