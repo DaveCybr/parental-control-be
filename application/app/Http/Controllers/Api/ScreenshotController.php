@@ -72,8 +72,7 @@ class ScreenshotController extends Controller
                 throw new \Exception('Failed to store screenshot file');
             }
 
-            $url = Storage::url($path); // contoh: /storage/screenshots/xxxx.jpg
-            $fullUrl = url($url);       // contoh: https://parentalcontrol.satelliteorbit.cloud/storage/screenshots/xxxx.jpg
+            $fullUrl = "https://parentalcontrol.satelliteorbit.cloud/application/public/storage/screenshots/{$filename}";       // contoh: https://parentalcontrol.satelliteorbit.cloud/storage/screenshots/xxxx.jpg
 
             // ✅ Simpan ke database
             $screenshot = Screenshot::create([
