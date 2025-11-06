@@ -18,24 +18,89 @@ class ScreenshotController extends Controller
             'screenshot' => 'required|image|max:5120', // max 5MB
         ]);
 
-        $device = Device::where('device_id', $request->device_id)->firstOrFail();
+        try {
+            $device = Device::where('device_id', $request->device_id)->firstOrFail();
 
-        // Upload file
-        $path = $request->file('screenshot')->store('screenshots', 'public');
-        $url = Storage::url($path);
+            // ✅ Pastikan direktori 'screenshots' tersedia
+            $directory = 'screenshots';
+            $fullPath = storage_path('app/public/' . $directory);
 
-        $screenshot = Screenshot::create([
-            'device_id' => $device->device_id,
-            'file_url' => 'application/public/' . $url,
-            'timestamp' => now(),
-        ]);
+            if (!file_exists($fullPath)) {
+                try {
+                    // Method 1: pakai Storage facade
+                    Storage::disk('public')->makeDirectory($directory);
+                } catch (\Exception $e) {
+                    // Method 2: mkdir manual
+                    if (@mkdir($fullPath, 0775, true)) {
+                        // sukses
+                    } else {
+                        $parentPath = dirname($fullPath);
+                        if (file_exists($parentPath) && is_writable($parentPath)) {
+                            @mkdir($fullPath, 0775, false);
+                        } else {
+                            throw new \Exception(
+                                "Cannot create directory. Parent path: {$parentPath} " .
+                                    (file_exists($parentPath) ? "exists but not writable" : "does not exist")
+                            );
+                        }
+                    }
+                }
+            }
 
-        return response()->json([
-            'success' => true,
-            'data' => $screenshot,
-            'message' => 'Screenshot uploaded',
-        ], 201);
+            // ✅ Pastikan folder bisa ditulis
+            if (!is_writable($fullPath)) {
+                @chmod($fullPath, 0775);
+
+                if (!is_writable($fullPath)) {
+                    throw new \Exception(
+                        "Directory is not writable: {$fullPath}. " .
+                            "Current permissions: " . substr(sprintf('%o', fileperms($fullPath)), -4) . ". " .
+                            "Owner: " . posix_getpwuid(fileowner($fullPath))['name'] . ". " .
+                            "Group: " . posix_getgrgid(filegroup($fullPath))['name']
+                    );
+                }
+            }
+
+            // ✅ Generate nama file unik
+            $timestamp = now()->format('YmdHis');
+            $filename = "{$request->device_id}_screenshot_{$timestamp}.jpg";
+
+            // ✅ Simpan file ke storage/app/public/screenshots
+            $path = $request->file('screenshot')->storeAs($directory, $filename, 'public');
+
+            if (!$path) {
+                throw new \Exception('Failed to store screenshot file');
+            }
+
+            $url = Storage::url($path); // contoh: /storage/screenshots/xxxx.jpg
+            $fullUrl = url($url);       // contoh: https://parentalcontrol.satelliteorbit.cloud/storage/screenshots/xxxx.jpg
+
+            // ✅ Simpan ke database
+            $screenshot = Screenshot::create([
+                'device_id' => $device->device_id,
+                'file_url' => $fullUrl,
+                'timestamp' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $screenshot,
+                'message' => 'Screenshot uploaded successfully',
+            ], 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to upload screenshot: ' . $e->getMessage(),
+            ], 500);
+        }
     }
+
 
     public function index(Request $request, $deviceId)
     {
