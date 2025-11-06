@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\GeofenceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ScreenshotController;
 use App\Http\Controllers\Api\CapturedPhotoController;
+use App\Http\Controllers\Api\AlbumController;
 use App\Http\Controllers\Api\TestFCMController;
 
 /*
@@ -54,6 +55,9 @@ Route::prefix('test/fcm')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/album', [AlbumController::class, 'getAlbum']);
+    Route::delete('/album/item', [AlbumController::class, 'deleteAlbumItem']);
 
     // Auth
     Route::prefix('auth')->group(function () {
