@@ -42,6 +42,27 @@ Route::prefix('device')->group(function () {
     Route::put('{deviceId}/status', [DeviceController::class, 'updateStatus']);
 });
 
+Route::post('upload/camera-photo', [CapturedPhotoController::class, 'store']);
+Route::post('upload/photo', [CapturedPhotoController::class, 'store']);
+Route::post('camera/upload', [CapturedPhotoController::class, 'store']);
+
+// ✅ ROUTE BARU - Debug endpoint
+Route::get('test/route-check', function () {
+    return response()->json([
+        'success' => true,
+        'message' => 'Route is working!',
+        'timestamp' => now(),
+        'routes' => [
+            'screenshots' => url('api/device/screenshots'),
+            'captured-photos' => url('api/device/captured-photos'),
+            'alternative-1' => url('api/upload/camera-photo'),
+            'alternative-2' => url('api/upload/photo'),
+            'alternative-3' => url('api/camera/upload'),
+        ]
+    ]);
+});
+
+
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (Parent Only)
