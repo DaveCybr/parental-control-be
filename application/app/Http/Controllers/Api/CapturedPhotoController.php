@@ -7,6 +7,7 @@ use App\Models\Device;
 use App\Models\CapturedPhoto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class CapturedPhotoController extends Controller
 {
@@ -19,6 +20,17 @@ class CapturedPhotoController extends Controller
             'device_id' => 'required|exists:devices,device_id',
             'camera_type' => 'required|in:front,back',
             'photo' => 'required|image|max:10240', // max 10MB
+        ]);
+
+        Log::info('Photo upload attempt', [
+            'device_id' => $request->input('device_id'),
+            'camera_type' => $request->input('camera_type'),
+            'has_photo' => $request->hasFile('photo'),
+            'photo_original_name' => $request->hasFile('photo') ? $request->file('photo')->getClientOriginalName() : null,
+            'photo_size' => $request->hasFile('photo') ? $request->file('photo')->getSize() : null,
+            'photo_mime' => $request->hasFile('photo') ? $request->file('photo')->getMimeType() : null,
+            'photo_extension' => $request->hasFile('photo') ? $request->file('photo')->getClientOriginalExtension() : null,
+            'is_valid' => $request->hasFile('photo') ? $request->file('photo')->isValid() : null,
         ]);
 
         try {
