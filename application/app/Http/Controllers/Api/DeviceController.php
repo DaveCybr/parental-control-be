@@ -130,6 +130,9 @@ class DeviceController extends Controller
     /**
      * Pair device
      */
+    /**
+     * Pair device
+     */
     public function pair(Request $request)
     {
         $request->validate([
@@ -139,17 +142,10 @@ class DeviceController extends Controller
             'device_type' => 'required|in:android,ios',
         ]);
 
-        // Log::info('Pair request received', $request->all());
-
         $existingDevice = Device::where('device_id', $request->device_id)->first();
 
         if ($existingDevice) {
             $existingDevice->load('parent:id,email,family_code');
-
-            // Log::info('Device already paired', [
-            //     'device_id' => $existingDevice->device_id,
-            //     'family_code' => $existingDevice->parent->family_code
-            // ]);
 
             return response()->json([
                 'success' => true,
@@ -166,7 +162,6 @@ class DeviceController extends Controller
         $parent = ParentModel::where('family_code', $request->family_code)->first();
 
         if (!$parent) {
-            // Log::error('Parent not found for family code: ' . $request->family_code);
             return response()->json([
                 'success' => false,
                 'message' => 'Family code not found',
@@ -183,12 +178,7 @@ class DeviceController extends Controller
             'created_at' => now(),
         ]);
 
-        // Log::info('New device paired', [
-        //     'device_id' => $device->device_id,
-        //     'device_name' => $device->device_name,
-        //     'family_code' => $parent->family_code
-        // ]);
-
+        // Broadcast event
         try {
             broadcast(new DevicePaired($parent->family_code, [
                 'device_id' => $device->device_id,
@@ -199,10 +189,56 @@ class DeviceController extends Controller
                 'paired_at' => now()->toISOString(),
                 'message' => 'Device berhasil dipasangkan'
             ]));
-
-            // Log::info('Broadcast event sent for family: ' . $parent->family_code);
         } catch (\Exception $e) {
-            // Log::error('Failed to broadcast event: ' . $e->getMessage());
+            Log::error('Failed to broadcast event: ' . $e->getMessage());
+        }
+
+        // Kirim FCM notification ke parent
+        try {
+            // Cek apakah parent punya FCM token
+            if ($parent->fcm_token) {
+                $notification = [
+                    'title' => 'Device Baru Terpasang',
+                    'body' => "Device '{$device->device_name}' telah berhasil dipasangkan dengan akun Anda",
+                ];
+
+                $data = [
+                    'type' => 'device_paired',
+                    'device_id' => $device->device_id,
+                    'device_name' => $device->device_name,
+                    'device_type' => $device->device_type,
+                    'parent_id' => $parent->id,
+                    'family_code' => $parent->family_code,
+                    'paired_at' => now()->toISOString(),
+                ];
+
+                $fcmResult = $this->fcmService->sendNotificationToParent(
+                    $parent->fcm_token,
+                    $notification,
+                    $data
+                );
+
+                if ($fcmResult['success']) {
+                    Log::info('FCM notification sent successfully to parent', [
+                        'parent_id' => $parent->id,
+                        'device_name' => $device->device_name
+                    ]);
+                } else {
+                    Log::warning('Failed to send FCM notification to parent', [
+                        'parent_id' => $parent->id,
+                        'error' => $fcmResult['message'] ?? 'Unknown error'
+                    ]);
+                }
+            } else {
+                Log::info('Parent does not have FCM token', [
+                    'parent_id' => $parent->id
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send FCM notification: ' . $e->getMessage(), [
+                'parent_id' => $parent->id,
+                'device_id' => $device->device_id
+            ]);
         }
 
         return response()->json([
@@ -213,10 +249,10 @@ class DeviceController extends Controller
                 'parent_id' => $device->parent_id,
                 'family_code' => $parent->family_code,
             ],
+            'fcm_sent' => isset($fcmResult) ? $fcmResult['success'] : false,
             'message' => 'Device paired successfully',
         ], 201);
     }
-
     /**
      * Update FCM token
      */
