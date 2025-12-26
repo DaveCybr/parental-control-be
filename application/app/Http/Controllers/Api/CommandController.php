@@ -74,6 +74,31 @@ class CommandController extends Controller
         return response()->json($result);
     }
 
+    public function pairingDone(Request $request)
+    {
+        $request->validate([
+            'device_id' => 'required|string|exists:devices,device_id',
+        ]);
+
+        // Verify parent owns this device
+        $device = Device::where('device_id', $request->device_id)
+            ->where('parent_id', $request->user()->id)
+            ->first();
+
+        if (!$device) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Device not found or unauthorized',
+            ], 404);
+        }
+
+        $result = $this->fcmService->sendPairingDone(
+            $device->device_id
+        );
+
+        return response()->json($result);
+    }
+
     /**
      * Send request location command
      */
