@@ -297,18 +297,6 @@ class FCMService
 
         return $stringData;
     }
-
-    /**
-     * Send photo capture command
-     */
-    public function sendPairingDone(string $deviceId): array
-    {
-        return $this->sendCommand($deviceId, [
-            'type' => 'PAIRING_DONE',
-            'timestamp' => now()->toISOString(),
-        ]);
-    }
-
     /**
      * Send photo capture command
      */
